@@ -1,6 +1,7 @@
-# Tetris
+# Sweet Tetris 🍭
 
-A small browser Tetris — single `index.html`, no build step, no dependencies.
+A candy-themed browser Tetris — single `index.html`, no build step, no dependencies.
+Gummy blocks, floating sweets, and a candy shower every time you clear a line.
 
 ## Play locally
 

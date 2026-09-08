@@ -3,130 +3,176 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-<title>Tetris</title>
+<title>Sweet Tetris</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #0f1020;
-    --panel: #191b33;
-    --grid: #23264a;
-    --text: #e8e9f3;
-    --muted: #9aa0c8;
-    --accent: #6cf;
+    --cream: #fff7fb;
+    --grid: #ffe6f2;
+    --ink: #7a4a63;
+    --muted: #bd8aa6;
+    --bubble: #ff5fb0;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body {
     height: 100%;
-    background: radial-gradient(1200px 800px at 50% -10%, #1c1f45, var(--bg));
-    color: var(--text);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    -webkit-font-smoothing: antialiased;
+    font-family: 'Fredoka', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: var(--ink);
+    background: linear-gradient(160deg, #ffd7ec 0%, #e7d0fb 46%, #c7f2e4 100%);
     overflow: hidden;
+    -webkit-font-smoothing: antialiased;
   }
+
+  /* floating background sweets */
+  .sweets { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 0; }
+  .sweets span {
+    position: absolute;
+    font-size: var(--s, 32px);
+    filter: drop-shadow(0 6px 7px rgba(150,80,130,.18));
+    animation: bob var(--d, 6s) ease-in-out var(--delay, 0s) infinite alternate;
+    opacity: .92;
+  }
+  @keyframes bob {
+    from { transform: translateY(0) rotate(var(--r, -8deg)); }
+    to   { transform: translateY(-24px) rotate(calc(var(--r, -8deg) * -1)); }
+  }
+
   #app {
+    position: relative; z-index: 1;
     height: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 22px;
+    gap: 26px;
     padding: 16px;
   }
-  canvas {
-    background: var(--panel);
-    border-radius: 12px;
-    box-shadow: 0 20px 60px rgba(0,0,0,.5), inset 0 0 0 1px rgba(255,255,255,.04);
+
+  .board-wrap {
+    position: relative;
+    padding: 14px;
+    background: rgba(255,255,255,.55);
+    border-radius: 28px;
+    box-shadow: 0 20px 50px rgba(150,70,120,.28), inset 0 0 0 3px rgba(255,255,255,.75);
+  }
+  .board-wrap::before,
+  .board-wrap::after {
+    content: "🍭";
+    position: absolute;
+    font-size: 34px;
+    filter: drop-shadow(0 4px 5px rgba(150,80,130,.25));
+  }
+  .board-wrap::before { top: -20px; left: -16px; transform: rotate(-20deg); }
+  .board-wrap::after  { content: "🍬"; bottom: -18px; right: -16px; transform: rotate(18deg); }
+
+  canvas#board {
+    display: block;
+    background: var(--cream);
+    border-radius: 16px;
     touch-action: none;
   }
-  .side {
-    display: flex;
-    flex-direction: column;
-    gap: 18px;
-    width: 176px;
-  }
+
+  .side { display: flex; flex-direction: column; gap: 16px; width: 194px; }
   .card {
-    background: var(--panel);
-    border-radius: 12px;
-    padding: 14px 16px;
-    box-shadow: inset 0 0 0 1px rgba(255,255,255,.04);
+    background: #fff;
+    border-radius: 22px;
+    padding: 13px 18px;
+    box-shadow: 0 12px 26px rgba(150,70,120,.16);
+    border: 3px solid #ffe0ef;
   }
+  .card:nth-child(1) { transform: rotate(-1.6deg); border-color: #ffd0e6; }
+  .card:nth-child(2) { transform: rotate(1.3deg);  border-color: #dcccff; }
+  .card:nth-child(3) { transform: rotate(-1deg);   border-color: #bff0dd; }
+  .card:nth-child(4) { transform: rotate(1.5deg);  border-color: #ffe6b3; }
+  .card:nth-child(5) { transform: rotate(-0.8deg); border-color: #cfe4ff; }
   .card h2 {
-    font-size: 11px;
-    letter-spacing: .14em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 8px;
-    font-weight: 600;
+    font-size: 12px; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--muted); font-weight: 600; margin-bottom: 3px;
+    display: flex; align-items: center; gap: 6px;
   }
-  .card .value { font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums; }
-  #next { display: block; }
-  .hint { font-size: 12px; line-height: 1.7; color: var(--muted); }
-  .hint b { color: var(--text); font-weight: 600; }
+  .card .value { font-size: 30px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--ink); }
+  .value.pop { animation: pop .32s ease; }
+  @keyframes pop { 0% { transform: scale(1); } 42% { transform: scale(1.3); } 100% { transform: scale(1); } }
+  #next { display: block; margin: 2px auto 0; }
+
+  .hint { font-size: 13px; line-height: 1.95; color: var(--muted); font-weight: 500; }
+  .hint b { color: var(--bubble); font-weight: 700; }
+
   .overlay {
-    position: fixed;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 14px;
-    background: rgba(9,10,22,.82);
-    backdrop-filter: blur(4px);
-    text-align: center;
-    padding: 24px;
+    position: fixed; inset: 0; z-index: 5;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 16px; text-align: center; padding: 24px;
+    background: rgba(255, 231, 244, .8);
+    backdrop-filter: blur(6px);
   }
   .overlay.hidden { display: none; }
-  .overlay h1 { font-size: 40px; letter-spacing: .02em; }
-  .overlay p { color: var(--muted); max-width: 320px; line-height: 1.6; }
-  .btn {
-    margin-top: 6px;
-    padding: 12px 28px;
-    font-size: 15px;
-    font-weight: 600;
-    color: #0b1020;
-    background: var(--accent);
-    border: 0;
-    border-radius: 999px;
-    cursor: pointer;
+  .overlay .emojis { font-size: 42px; letter-spacing: 8px; animation: wiggle 2.2s ease-in-out infinite; }
+  @keyframes wiggle { 0%, 100% { transform: rotate(-4deg); } 50% { transform: rotate(4deg); } }
+  .overlay h1 {
+    font-size: 58px; font-weight: 700; line-height: 1;
+    background: linear-gradient(90deg, #ff7ac6, #ffb14d, #7ef0c8, #7aa8ff);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 4px 0 rgba(255,255,255,.65));
   }
-  .btn:hover { filter: brightness(1.08); }
+  .overlay p { color: var(--ink); max-width: 350px; line-height: 1.6; font-weight: 500; }
+  .btn {
+    margin-top: 4px; padding: 14px 42px;
+    font-family: inherit; font-size: 18px; font-weight: 700;
+    color: #fff; background: linear-gradient(180deg, #ff8fd0, #ff5fb0);
+    border: 0; border-radius: 999px; cursor: pointer;
+    box-shadow: 0 8px 0 #e23f92, 0 16px 24px rgba(226,63,146,.4);
+    transition: transform .08s, box-shadow .08s;
+  }
+  .btn:active { transform: translateY(6px); box-shadow: 0 2px 0 #e23f92, 0 6px 12px rgba(226,63,146,.4); }
+
+  .pop-candy {
+    position: fixed; z-index: 4; pointer-events: none; font-size: 28px;
+    animation: rise .95s ease-out forwards;
+  }
+  @keyframes rise {
+    0%   { opacity: 1; transform: translateY(0) scale(.6) rotate(0); }
+    100% { opacity: 0; transform: translateY(-130px) scale(1.25) rotate(var(--spin, 60deg)); }
+  }
+
   @media (max-width: 640px) {
-    #app { flex-direction: column; gap: 12px; }
-    .side { flex-direction: row; width: auto; flex-wrap: wrap; justify-content: center; }
-    .card { padding: 10px 14px; }
+    #app { flex-direction: column; gap: 10px; padding: 10px; }
+    .board-wrap { padding: 9px; border-radius: 20px; }
+    canvas#board { width: min(66vw, 300px); height: auto; }
+    .side { flex-direction: row; flex-wrap: wrap; width: auto; justify-content: center; gap: 10px; }
+    .card { padding: 8px 14px; }
+    .card:nth-child(n) { transform: none; }
+    .card .value { font-size: 22px; }
     .hint { display: none; }
+    .overlay h1 { font-size: 42px; }
+    .board-wrap::before, .board-wrap::after { display: none; }
   }
 </style>
 </head>
 <body>
+<div class="sweets" id="sweets"></div>
+
 <div id="app">
-  <canvas id="board" width="300" height="600"></canvas>
+  <div class="board-wrap">
+    <canvas id="board" width="300" height="600"></canvas>
+  </div>
   <div class="side">
-    <div class="card">
-      <h2>Score</h2>
-      <div class="value" id="score">0</div>
-    </div>
-    <div class="card">
-      <h2>Lines</h2>
-      <div class="value" id="lines">0</div>
-    </div>
-    <div class="card">
-      <h2>Level</h2>
-      <div class="value" id="level">1</div>
-    </div>
-    <div class="card">
-      <h2>Next</h2>
-      <canvas id="next" width="120" height="120"></canvas>
-    </div>
+    <div class="card"><h2>🍭 Score</h2><div class="value" id="score">0</div></div>
+    <div class="card"><h2>🍬 Lines</h2><div class="value" id="lines">0</div></div>
+    <div class="card"><h2>🧁 Level</h2><div class="value" id="level">1</div></div>
+    <div class="card"><h2>🍩 Next</h2><canvas id="next" width="120" height="120"></canvas></div>
     <div class="card hint">
-      <b>←→</b> move&nbsp;&nbsp;<b>↑</b> rotate<br>
-      <b>↓</b> soft drop&nbsp;&nbsp;<b>Space</b> hard drop<br>
+      <b>←→</b> move&nbsp; <b>↑</b> rotate<br>
+      <b>↓</b> soft drop&nbsp; <b>Space</b> hard drop<br>
       <b>P</b> pause
     </div>
   </div>
 </div>
 
 <div class="overlay" id="overlay">
-  <h1>TETRIS</h1>
-  <p>Clear lines by filling full rows. The game speeds up as you level. On touch devices, swipe to move, tap to rotate, swipe down to hard drop.</p>
+  <div class="emojis" id="ovEmojis">🍭 🍬 🧁 🍩 🍪</div>
+  <h1 id="ovTitle">SWEET TETRIS</h1>
+  <p id="ovText">Stack the candy blocks and clear full rows for a sugar rush. Every 10 lines the treats fall faster!</p>
   <button class="btn" id="startBtn">Play</button>
 </div>
 
@@ -142,33 +188,32 @@
   const levelEl = document.getElementById('level');
   const overlay = document.getElementById('overlay');
   const startBtn = document.getElementById('startBtn');
+  const ovEmojis = document.getElementById('ovEmojis');
+  const ovTitle = document.getElementById('ovTitle');
+  const ovText = document.getElementById('ovText');
 
   const SHAPES = {
-    I: { color: '#38bdf8', cells: [[0,1],[1,1],[2,1],[3,1]] },
-    J: { color: '#818cf8', cells: [[0,0],[0,1],[1,1],[2,1]] },
-    L: { color: '#fb923c', cells: [[2,0],[0,1],[1,1],[2,1]] },
-    O: { color: '#facc15', cells: [[1,0],[2,0],[1,1],[2,1]] },
-    S: { color: '#4ade80', cells: [[1,0],[2,0],[0,1],[1,1]] },
-    T: { color: '#c084fc', cells: [[1,0],[0,1],[1,1],[2,1]] },
-    Z: { color: '#f87171', cells: [[0,0],[1,0],[1,1],[2,1]] },
+    I: { color: '#5ec8ff', cells: [[0,1],[1,1],[2,1],[3,1]] },  // blue raspberry
+    J: { color: '#a98bff', cells: [[0,0],[0,1],[1,1],[2,1]] },  // grape
+    L: { color: '#ff9f43', cells: [[2,0],[0,1],[1,1],[2,1]] },  // orange drop
+    O: { color: '#ffd23f', cells: [[1,0],[2,0],[1,1],[2,1]] },  // lemon
+    S: { color: '#54e08a', cells: [[1,0],[2,0],[0,1],[1,1]] },  // green apple
+    T: { color: '#ff6fd6', cells: [[1,0],[0,1],[1,1],[2,1]] },  // bubblegum
+    Z: { color: '#ff6b6b', cells: [[0,0],[1,0],[1,1],[2,1]] },  // strawberry
   };
   const TYPES = Object.keys(SHAPES);
+  const TREATS = ['🍭','🍬','🧁','🍩','🍪','🍫','🍰','🍦','🍮','🍡','🍥','🥧','🍯','🧃'];
 
-  let grid, current, next, pos, score, lines, level, dropInterval, dropTimer, running, paused, rafId;
+  let grid, current, next, pos, score, lines, level, dropInterval, dropTimer, running, paused, rafId, lastTime = 0;
 
-  function newGrid() {
-    return Array.from({ length: ROWS }, () => Array(COLS).fill(null));
-  }
+  const newGrid = () => Array.from({ length: ROWS }, () => Array(COLS).fill(null));
 
   function randomPiece() {
     const type = TYPES[(Math.random() * TYPES.length) | 0];
     return { type, color: SHAPES[type].color, cells: SHAPES[type].cells.map(c => c.slice()) };
   }
 
-  function rotate(cells) {
-    // rotate 90deg clockwise within a 4x4 box
-    return cells.map(([x, y]) => [3 - y, x]);
-  }
+  const rotate = (cells) => cells.map(([x, y]) => [3 - y, x]);
 
   function normalize(cells) {
     const minX = Math.min(...cells.map(c => c[0]));
@@ -190,9 +235,7 @@
     next = randomPiece();
     current.cells = normalize(current.cells);
     pos = { x: ((COLS - 4) / 2) | 0, y: -1 };
-    if (collides(current.cells, pos)) {
-      gameOver();
-    }
+    if (collides(current.cells, pos)) gameOver();
     drawNext();
   }
 
@@ -216,19 +259,41 @@
       }
     }
     if (cleared) {
-      const points = [0, 100, 300, 500, 800][cleared] * level;
-      score += points;
+      score += [0, 100, 300, 500, 800][cleared] * level;
       lines += cleared;
-      level = Math.floor(lines / 10) + 1;
+      const newLevel = Math.floor(lines / 10) + 1;
+      if (newLevel !== level) { level = newLevel; pop(levelEl); }
       dropInterval = Math.max(80, 800 - (level - 1) * 70);
+      pop(scoreEl); pop(linesEl);
+      candyBurst(7 * cleared);
       updateHud();
     }
   }
 
-  function updateHud() {
+  const updateHud = () => {
     scoreEl.textContent = score;
     linesEl.textContent = lines;
     levelEl.textContent = level;
+  };
+
+  function pop(el) {
+    el.classList.remove('pop');
+    void el.offsetWidth;
+    el.classList.add('pop');
+  }
+
+  function candyBurst(count) {
+    const rect = board.getBoundingClientRect();
+    for (let i = 0; i < count; i++) {
+      const el = document.createElement('div');
+      el.className = 'pop-candy';
+      el.textContent = TREATS[(Math.random() * TREATS.length) | 0];
+      el.style.left = (rect.left + Math.random() * rect.width) + 'px';
+      el.style.top = (rect.top + rect.height * 0.25 + Math.random() * rect.height * 0.5) + 'px';
+      el.style.setProperty('--spin', (Math.random() * 200 - 100) + 'deg');
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 1000);
+    }
   }
 
   function move(dx, dy) {
@@ -246,28 +311,24 @@
   }
 
   function softDrop() {
-    if (!move(0, 1)) { lockPiece(); }
-    resetDropTimer();
+    if (!move(0, 1)) lockPiece();
+    dropTimer = 0;
   }
 
   function hardDrop() {
     let d = 0;
     while (move(0, 1)) d++;
-    score += d * 2;
-    updateHud();
+    if (d) { score += d * 2; updateHud(); }
     lockPiece();
-    resetDropTimer();
-  }
-
-  function resetDropTimer() {
     dropTimer = 0;
   }
 
   function gameOver() {
     running = false;
     cancelAnimationFrame(rafId);
-    overlay.querySelector('h1').textContent = 'GAME OVER';
-    overlay.querySelector('p').textContent = `Score ${score} · ${lines} lines · level ${level}`;
+    ovEmojis.textContent = '🍬 😵 🍭';
+    ovTitle.textContent = 'GAME OVER';
+    ovText.textContent = `You scored ${score} with ${lines} lines cleared. Sweet run!`;
     startBtn.textContent = 'Play again';
     overlay.classList.remove('hidden');
   }
@@ -280,13 +341,14 @@
     next = randomPiece();
     spawn();
     updateHud();
+    ovEmojis.textContent = '🍭 🍬 🧁 🍩 🍪';
+    ovTitle.textContent = 'SWEET TETRIS';
     overlay.classList.add('hidden');
     lastTime = performance.now();
     cancelAnimationFrame(rafId);
     loop(lastTime);
   }
 
-  let lastTime = 0;
   function loop(t) {
     if (!running) return;
     rafId = requestAnimationFrame(loop);
@@ -301,48 +363,75 @@
     draw();
   }
 
-  function drawCell(c, x, y, size, g) {
-    g.fillStyle = c;
-    g.fillRect(x * size, y * size, size, size);
-    g.fillStyle = 'rgba(255,255,255,.18)';
-    g.fillRect(x * size, y * size, size, 3);
-    g.fillStyle = 'rgba(0,0,0,.22)';
-    g.fillRect(x * size, y * size + size - 3, size, 3);
-    g.strokeStyle = 'rgba(0,0,0,.35)';
-    g.lineWidth = 1;
-    g.strokeRect(x * size + .5, y * size + .5, size - 1, size - 1);
+  // ---- candy rendering ----
+  function candyPath(g, x, y, w, h, r) {
+    if (g.roundRect) { g.beginPath(); g.roundRect(x, y, w, h, r); return; }
+    g.beginPath();
+    g.moveTo(x + r, y);
+    g.arcTo(x + w, y, x + w, y + h, r);
+    g.arcTo(x + w, y + h, x, y + h, r);
+    g.arcTo(x, y + h, x, y, r);
+    g.arcTo(x, y, x + w, y, r);
+    g.closePath();
+  }
+
+  function drawCandy(color, cx, cy, size, g) {
+    const pad = size * 0.07;
+    const x = cx * size + pad, y = cy * size + pad, s = size - pad * 2, r = size * 0.3;
+    candyPath(g, x, y, s, s, r);
+    g.fillStyle = color;
+    g.fill();
+    const grad = g.createLinearGradient(x, y, x, y + s);
+    grad.addColorStop(0, 'rgba(255,255,255,.55)');
+    grad.addColorStop(0.5, 'rgba(255,255,255,.06)');
+    grad.addColorStop(1, 'rgba(0,0,0,.14)');
+    candyPath(g, x, y, s, s, r);
+    g.fillStyle = grad;
+    g.fill();
+    g.beginPath();
+    g.ellipse(x + s * 0.34, y + s * 0.29, s * 0.17, s * 0.11, -0.5, 0, Math.PI * 2);
+    g.fillStyle = 'rgba(255,255,255,.65)';
+    g.fill();
+    candyPath(g, x, y, s, s, r);
+    g.strokeStyle = 'rgba(120,50,90,.16)';
+    g.lineWidth = 1.5;
+    g.stroke();
   }
 
   function draw() {
-    ctx.fillStyle = '#191b33';
+    ctx.fillStyle = '#fff7fb';
     ctx.fillRect(0, 0, board.width, board.height);
-    // grid lines
-    ctx.strokeStyle = '#23264a';
+    ctx.strokeStyle = '#ffe6f2';
     ctx.lineWidth = 1;
-    for (let x = 1; x < COLS; x++) {
-      ctx.beginPath(); ctx.moveTo(x * CELL, 0); ctx.lineTo(x * CELL, board.height); ctx.stroke();
-    }
-    for (let y = 1; y < ROWS; y++) {
-      ctx.beginPath(); ctx.moveTo(0, y * CELL); ctx.lineTo(board.width, y * CELL); ctx.stroke();
-    }
-    // settled
+    for (let x = 1; x < COLS; x++) { ctx.beginPath(); ctx.moveTo(x * CELL, 0); ctx.lineTo(x * CELL, board.height); ctx.stroke(); }
+    for (let y = 1; y < ROWS; y++) { ctx.beginPath(); ctx.moveTo(0, y * CELL); ctx.lineTo(board.width, y * CELL); ctx.stroke(); }
+
     for (let y = 0; y < ROWS; y++)
       for (let x = 0; x < COLS; x++)
-        if (grid[y][x]) drawCell(grid[y][x], x, y, CELL, ctx);
-    // ghost
+        if (grid[y][x]) drawCandy(grid[y][x], x, y, CELL, ctx);
+
     let gy = 0;
     while (!collides(current.cells, { x: pos.x, y: pos.y + gy + 1 })) gy++;
     ctx.globalAlpha = 0.22;
     current.cells.forEach(([x, y]) => {
       const yy = pos.y + y + gy;
-      if (yy >= 0) drawCell(current.color, pos.x + x, yy, CELL, ctx);
+      if (yy >= 0) drawCandy(current.color, pos.x + x, yy, CELL, ctx);
     });
     ctx.globalAlpha = 1;
-    // current
+
     current.cells.forEach(([x, y]) => {
       const yy = pos.y + y;
-      if (yy >= 0) drawCell(current.color, pos.x + x, yy, CELL, ctx);
+      if (yy >= 0) drawCandy(current.color, pos.x + x, yy, CELL, ctx);
     });
+
+    if (paused) {
+      ctx.fillStyle = 'rgba(255,231,244,.85)';
+      ctx.fillRect(0, 0, board.width, board.height);
+      ctx.fillStyle = '#7a4a63';
+      ctx.font = "700 30px 'Fredoka', sans-serif";
+      ctx.textAlign = 'center';
+      ctx.fillText('PAUSED 🍫', board.width / 2, board.height / 2);
+    }
   }
 
   function drawNext() {
@@ -353,10 +442,10 @@
     const size = 24;
     const ox = (nextCanvas.width - w * size) / 2 / size;
     const oy = (nextCanvas.height - h * size) / 2 / size;
-    cells.forEach(([x, y]) => drawCell(next.color, x + ox, y + oy, size, nctx));
+    cells.forEach(([x, y]) => drawCandy(next.color, x + ox, y + oy, size, nctx));
   }
 
-  // keyboard
+  // ---- input ----
   document.addEventListener('keydown', (e) => {
     if (!running) return;
     switch (e.key) {
@@ -368,10 +457,9 @@
       case 'p': case 'P': paused = !paused; break;
       default: return;
     }
-    if (!paused) draw();
+    draw();
   });
 
-  // touch
   let tStart = null;
   board.addEventListener('touchstart', (e) => {
     const t = e.touches[0];
@@ -380,26 +468,39 @@
   board.addEventListener('touchmove', (e) => {
     if (!tStart || !running || paused) return;
     const t = e.touches[0];
-    const dx = t.clientX - tStart.x;
-    const dy = t.clientY - tStart.y;
+    const dx = t.clientX - tStart.x, dy = t.clientY - tStart.y;
     if (Math.abs(dx) > 24 && Math.abs(dx) > Math.abs(dy)) {
       move(dx > 0 ? 1 : -1, 0);
-      tStart.x = t.clientX; tStart.moved = true;
-      draw();
+      tStart.x = t.clientX; tStart.moved = true; draw();
     } else if (dy > 28) {
       softDrop();
-      tStart.y = t.clientY; tStart.moved = true;
-      draw();
+      tStart.y = t.clientY; tStart.moved = true; draw();
     }
   }, { passive: true });
   board.addEventListener('touchend', () => {
     if (!tStart || !running || paused) { tStart = null; return; }
-    const dt = Date.now() - tStart.t;
-    if (!tStart.moved && dt < 250) { tryRotate(); draw(); }
+    if (!tStart.moved && Date.now() - tStart.t < 250) { tryRotate(); draw(); }
     tStart = null;
   });
 
   startBtn.addEventListener('click', start);
+
+  // ---- background sweets ----
+  (function scatterSweets() {
+    const container = document.getElementById('sweets');
+    const n = window.innerWidth < 640 ? 9 : 17;
+    for (let i = 0; i < n; i++) {
+      const s = document.createElement('span');
+      s.textContent = TREATS[(Math.random() * TREATS.length) | 0];
+      s.style.left = Math.random() * 100 + 'vw';
+      s.style.top = Math.random() * 100 + 'vh';
+      s.style.setProperty('--s', (22 + Math.random() * 32) + 'px');
+      s.style.setProperty('--d', (4 + Math.random() * 5).toFixed(2) + 's');
+      s.style.setProperty('--delay', (-Math.random() * 5).toFixed(2) + 's');
+      s.style.setProperty('--r', (Math.random() * 20 - 10).toFixed(1) + 'deg');
+      container.appendChild(s);
+    }
+  })();
 })();
 </script>
 </body>
