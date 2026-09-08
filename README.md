@@ -25,6 +25,11 @@ Then open http://localhost:4173
 
 Touch: swipe to move, swipe down to drop, tap to rotate.
 
+## Install on your phone
+
+Open the site in Safari (iOS) or Chrome (Android) → **Share → Add to Home Screen**.
+It launches full-screen with the candy icon (`apple-touch-icon.png` / `manifest.webmanifest`).
+
 ## Deploy
 
 Hosted on GitHub Pages from `main` / root. Any push to `main` redeploys within a minute:
